@@ -1,0 +1,16 @@
+{
+    "name": "UnityEvents.Example",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f8c4ed1600e01de42a3fac384d8ac7c9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

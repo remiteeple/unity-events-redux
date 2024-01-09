@@ -1,16 +1,21 @@
 # Unity Events Redux #
-*Based on the original [Unity Events 2.0](https://github.com/GalvanicGames/unity-events) by GalvanicGames*
+*Based on the original [Unity Events Redux](https://github.com/GalvanicGames/unity-events) by GalvanicGames*
 
 A performant code focused strongly typed publisher/subscriber event system to decouple objects from talking directly to each other. Supports global event system and per GameObject event systems that send deferred events to be processed at a later tick (FixedUpdate, Update, or LateUpdate). Allows regular callback events and multithreaded jobs that trigger on events.
 
 Custom Event Systems can be created to control when events are processed instead of relying on the update ticks.
 
-Uses Unity's new Job System and the burst compiler. Both of those features are considered in preview and experimental. Use at your own risk!
+The code is **fully Unit Tested**.
 
-#### Obtain! ####
-[Releases](https://github.com/GalvanicGames/unity-events/releases)
+## Disclaimer
+This package utilizes Unity's Job System. The Job System is a feature that is considered to be in preview and experimental. **Use at your own risk!**
 
-If you'd like the most up to date version (which is the most cool), then pull the repo or download it [here](https://github.com/GalvanicGames/unity-events/archive/master.zip) and copy the files in Assets to your project's Assets folder.
+## Obtain
+### Automated
+`com.remiteeple.unity-events-redux`
+
+### Manual
+[Releases](https://github.com/remiteeple/unity-events-redux/releases)
 
 ## Setup
 Once the Unity Events asset has been imported into the project then the event system is ready to be used.
@@ -22,11 +27,6 @@ Jobs
 Mathematics
 Collections
 Burst
-```
-
-Also requires:
-```
-.NET 4.x Runtime (Default in 2018.3)
 ```
 
 ## Examples
@@ -72,11 +72,8 @@ public void SendEvents()
 
 ```
 
-## BLITTABLE NOTE!
-Unity Events 2.0 requires that events/jobs are [blittable](https://docs.microsoft.com/en-us/dotnet/framework/interop/blittable-and-non-blittable-types) types. This is done to allow compatibility with the burst compiler and Unity's Job system. Also has a benefit of encouraging "better" programming practices since the events are deferred. References may become stale and GameObjects may have been destroyed and are "null" by the time the event is processed. Send the data the event represents rather than a reference to an object. If a reference is needed then create a look up database and send the id of the object for event listeners to look up to process on. If an array/list is needed then consider using something like [ValueTypeLists](https://gist.github.com/cjddmut/cb43af3ee191af78363f41a3188c0f7b).
+## Blittable Requirement
+Unity Events Redux requires that events/jobs are [blittable](https://docs.microsoft.com/en-us/dotnet/framework/interop/blittable-and-non-blittable-types) types. This is done to allow compatibility with the burst compiler and Unity's Job system. Also has a benefit of encouraging "better" programming practices since the events are deferred. References may become stale and GameObjects may have been destroyed and are "null" by the time the event is processed. Send the data the event represents rather than a reference to an object. If a reference is needed then create a look up database and send the id of the object for event listeners to look up to process on. If an array/list is needed then consider using something like [ValueTypeLists](https://gist.github.com/cjddmut/cb43af3ee191af78363f41a3188c0f7b).
 
-## 'DISABLE_EVENT_SAFETY_CHKS' Define Symbol
-Unity Events 2.0 does various safety checks to make sure it isn't being used inappropriately. These can be turned off by defning 'DISABLE_EVENT_SAFETY_CHKS' with the compiler (or in Unity go to 'Player Settings > Scripting Define Symbols'). Turning it off can improve performance since no checks will always be faster than any check. Use at your own risk!
-
-## Dropped Features
-Unity Events 2.0 was rebuilt with performance and flexibility more in mind. Because of this some features of the original version of Unity Events have been dropped. If these features are important than the previous version of Unity Events can be found [here](https://github.com/GalvanicGames/unity-events/releases/tag/1.0).
+## _'DISABLE_EVENT_SAFETY_CHKS'_ Symbol
+Unity Events Redux performs various safety checks to make sure it isn't being used inappropriately. These can be turned off by defning 'DISABLE_EVENT_SAFETY_CHKS' with the compiler (or in Unity go to 'Player Settings > Scripting Define Symbols'). Turning it off can improve performance since no checks will always be faster than any check. Use at your own risk!
