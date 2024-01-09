@@ -1,40 +1,38 @@
-# Unity Events Redux #
-*Based on the original [Unity Events Redux](https://github.com/GalvanicGames/unity-events) by GalvanicGames*
+# Unity Events Redux Enhanced #
+*Based on the original [Unity Events 2.0](https://github.com/GalvanicGames/unity-events) by GalvanicGames, this is an enhanced version.*
 
-A performant code focused strongly typed publisher/subscriber event system to decouple objects from talking directly to each other. Supports global event system and per GameObject event systems that send deferred events to be processed at a later tick (FixedUpdate, Update, or LateUpdate). Allows regular callback events and multithreaded jobs that trigger on events.
+Unity Events Redux Enhanced is a highly efficient, code-centric, and strongly typed publisher/subscriber event system designed to minimize direct object-to-object communication. It features both global and GameObject-specific event systems, capable of sending deferred events to be processed during FixedUpdate, Update, or LateUpdate. This system facilitates both standard callback events and multithreaded jobs that are activated by specific events.
 
-Custom Event Systems can be created to control when events are processed instead of relying on the update ticks.
+Customizable Event Systems can be created, allowing for control over event processing times beyond the standard update cycles.
 
-The code is **fully Unit Tested**.
+The codebase is **fully Unit Tested** for reliability and stability.
 
-## Disclaimer
-This package utilizes Unity's Job System. The Job System is a feature that is considered to be in preview and experimental. **Use at your own risk!**
+## Caution
+This package leverages Unity's Job System, a feature currently in preview and experimental stages. **Usage is at your own discretion and risk.**
 
-## Obtain
-### Automated
-`com.remiteeple.unity-events-redux`
+## Installation
+### Automated Method
+Use package identifier `com.remiteeple.unity-events-redux`.
 
-### Manual
-[Releases](https://github.com/remiteeple/unity-events-redux/releases)
+### Manual Method
+Access [Releases](https://github.com/remiteeple/unity-events-redux/releases) for manual download.
 
-## Setup
-Once the Unity Events asset has been imported into the project then the event system is ready to be used.
+## Configuration
+Post-import, Unity Events Redux is immediately operational.
 
-### Prerequisites ###
-Requires the following Unity packages:
-```
-Jobs
-Mathematics
-Collections
-Burst
-```
+### Dependencies ###
+Requires installation of the following Unity packages:
+- Jobs
+- Mathematics
+- Collections
+- Burst
 
-## Examples
-There are multiple [simple](Assets/UnityEvents/Examples/Simple) and [advanced](Assets/UnityEvents/Examples/Advance) examples in the repository and can be looked at for guidance.
+## Usage Examples
+Numerous [Simple](Assets/UnityEvents/Examples/Simple) and [Advanced](Assets/UnityEvents/Examples/Advance) examples are available in the repository for reference.
 
-As a simple example here is how an event can be sent to a Global event system and a GameObject's local event system.
+Here's a straightforward illustration of dispatching events to both Global and GameObject-specific event systems:
 ```csharp
-// I have to be an unmanaged type! Need references? Use an id and have a lookup database system.
+// Events must be unmanaged types. For references, use an identifier and a lookup system.
 private struct EvExampleEvent
 {
   public int exampleValue;
@@ -45,7 +43,7 @@ private struct EvExampleEvent
   }
 }
 
-// The callback that will be invoked on an event
+// Callback function for event handling
 private void OnExampleEvent(EvExampleEvent ev)
 {
   Debug.Log("Event received! Value: " + ev.exampleValue);
@@ -53,27 +51,25 @@ private void OnExampleEvent(EvExampleEvent ev)
 
 private void OnEnable()
 {
-  // Subscribes to the global event system, handles events in FixedUpdate
+  // Subscribe to the global event system for FixedUpdate handling
   GlobalEventSystem.Subscribe<EvExampleEvent>(OnExampleEvent);
 
-  // Subscribes to THIS GameObject's event system! Also Fixed Update
+  // Subscribe to this GameObject's local event system for FixedUpdate handling
   gameObject.Subscribe<EvExampleEvent>(OnExampleEvent);
 }
 
-public void SendEvents()
+public void TriggerEvents()
 {
-  // Send an event to the global event system, will be processed in the next FixedUpdate
+  // Dispatch event globally, processed next FixedUpdate
   GlobalEventSystem.SendEvent(new EvExampleEvent(10));
 
-  // Send an event to a specific GameObject, only listeners subscribed to that gameobject will get
-  // this event. Also will be processed in the next FixedUpdate
+  // Dispatch event to this specific GameObject, processed next FixedUpdate
   gameObject.SendEvent(new EvExampleEvent(99));
 }
-
 ```
 
-## Blittable Requirement
-Unity Events Redux requires that events/jobs are [blittable](https://docs.microsoft.com/en-us/dotnet/framework/interop/blittable-and-non-blittable-types) types. This is done to allow compatibility with the burst compiler and Unity's Job system. Also has a benefit of encouraging "better" programming practices since the events are deferred. References may become stale and GameObjects may have been destroyed and are "null" by the time the event is processed. Send the data the event represents rather than a reference to an object. If a reference is needed then create a look up database and send the id of the object for event listeners to look up to process on. If an array/list is needed then consider using something like [ValueTypeLists](https://gist.github.com/cjddmut/cb43af3ee191af78363f41a3188c0f7b).
+## Blittable Event Requirement
+Unity Events Redux mandates the use of [blittable](https://docs.microsoft.com/en-us/dotnet/framework/interop/blittable-and-non-blittable-types) types for events/jobs, ensuring compatibility with the burst compiler and Unity's Job system. This encourages better programming practices, as deferred events might encounter stale references or destroyed GameObjects. Events should represent data, not object references. For necessary references, utilize a lookup database system and send object IDs.
 
 ## _'DISABLE_EVENT_SAFETY_CHKS'_ Symbol
-Unity Events Redux performs various safety checks to make sure it isn't being used inappropriately. These can be turned off by defning 'DISABLE_EVENT_SAFETY_CHKS' with the compiler (or in Unity go to 'Player Settings > Scripting Define Symbols'). Turning it off can improve performance since no checks will always be faster than any check. Use at your own risk!
+Unity Events Redux conducts various safety checks by default. To disable these for performance gains, define 'DISABLE_EVENT_SAFETY_CHKS' in the compiler (or in Unity: 'Player Settings > Scripting Define Symbols'). Disabling checks can boost performance but increases the risk of misuse. Use with caution!
