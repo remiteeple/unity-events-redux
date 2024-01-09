@@ -1,61 +1,74 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace UnityEvents.Internal
 {
-	public class MultipleSubscriptionsException<T> : Exception
-	{
-		public MultipleSubscriptionsException(Action<T> callback)
-			: base($"Not allowed to subscribe the same callback to the same entity! Target: {callback.Target.GetType().Name} Event: {typeof(T).Name}")
-		{
-			
-		}
-	}
+   /// <summary>
+   /// Called when a subscriber tries to subscribe to the same event twice.
+   /// </summary>
+   /// <typeparam name="T"></typeparam>
+   public class MultipleSubscriptionsException<T> : Exception
+   {
+      public MultipleSubscriptionsException(Action<T> callback)
+         : base($"Not allowed to subscribe the same callback to the same entity! Target: {callback.Target.GetType().Name} Event: {typeof(T).Name}")
+      {
 
-	public class SubscriberStillListeningException<T_Callback, T_Event> : Exception
-		where T_Event : struct
-	{
-		public SubscriberStillListeningException(List<Action<T_Callback>> listeners)
-			: base(GenerateMessage(listeners))
-		{
-		}
+      }
+   }
 
-		private static string GenerateMessage(List<Action<T_Callback>> listeners)
-		{
-			string msg = $"The following subscribers are still listening to the {typeof(T_Event).Name} system!";
+   /// <summary>
+   /// Thrown when a subscriber is still listening to an event when the event system is disposed.
+   /// </summary>
+   /// <typeparam name="T_Callback"></typeparam>
+   /// <typeparam name="T_Event"></typeparam>
+   public class SubscriberStillListeningException<T_Callback, T_Event> : Exception
+        where T_Event : struct
+   {
+      private readonly List<Action<T_Callback>> _listeners;
 
-			foreach (Action<T_Callback> listener in listeners)
-			{
-				if (listener == null)
-				{
-					msg += "\n<NULL>";
-				}
-				else
-				{
-					msg += $"\n{listener.Method.Name}";
-				}
-			}
+      public SubscriberStillListeningException(List<Action<T_Callback>> listeners)
+          : base($"The following subscribers are still listening to the {typeof(T_Event).Name} system!")
+      {
+         _listeners = listeners;
+      }
 
-			return msg;
-		}
-	}
+      public override string ToString()
+      {
+         var sb = new StringBuilder(base.ToString());
+         foreach (var listener in _listeners)
+         {
+            sb.AppendLine(listener?.Method.Name ?? "<NULL>");
+         }
+         return sb.ToString();
+      }
+   }
 
-	public class IndexOutOfReservedTargetsException : Exception
-	{
-		
-	}
+   /// <summary>
+   /// Called when index out of range exception for reserved targets.
+   /// </summary>
+   public class IndexOutOfReservedTargetsException : Exception
+   {
 
-	public class EventTypeNotBlittableException : Exception
-	{
-		public EventTypeNotBlittableException(Type type) 
-			: base($"Event type {type.Name} must be blittable!")
-		{}
-	}
-	
-	public class JobTypeNotBlittableException : Exception
-	{
-		public JobTypeNotBlittableException(Type type) 
-			: base($"Job type {type.Name} must be blittable!")
-		{}
-	}
+   }
+
+   /// <summary>
+   /// Called when a subscriber tries to subscribe to an event that is not blittable.
+   /// </summary>
+   public class EventTypeNotBlittableException : Exception
+   {
+      public EventTypeNotBlittableException(Type type)
+         : base($"Event type {type.Name} must be blittable!")
+      { }
+   }
+
+   /// <summary>
+   /// Called when a subscriber tries to subscribe to a job that is not blittable.
+   /// </summary>
+   public class JobTypeNotBlittableException : Exception
+   {
+      public JobTypeNotBlittableException(Type type)
+         : base($"Job type {type.Name} must be blittable!")
+      { }
+   }
 }
