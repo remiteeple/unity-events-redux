@@ -181,6 +181,11 @@ namespace UnityEvents
          }
       }
 
+      /// <summary>
+      /// Get the system for the event type.
+      /// </summary>
+      /// <typeparam name="T_Event"></typeparam>
+      /// <returns></returns>
       private EventHandlerStandard<T_Event> GetSystem<T_Event>() where T_Event : unmanaged
       {
          Type evType = typeof(T_Event);
@@ -205,32 +210,12 @@ namespace UnityEvents
          return (EventHandlerStandard<T_Event>)system;
       }
 
-      //private EventHandlerJob<T_Job, T_Event> GetJobSystem<T_Job, T_Event>()
-      //	where T_Job : unmanaged, IJobForEvent<T_Event>
-      //	where T_Event : unmanaged
-      //    {
-      //	Type jobType = typeof(T_Job);
-
-      //	if (jobType == _cachedJobSystemType)
-      //	{
-      //		return (EventHandlerJob<T_Job, T_Event>) _cachedJobSystem;
-      //	}
-
-      //	IEventSystem system;
-
-      //	if (!_jobSystemsCache.TryGetValue(typeof(T_Job), out system))
-      //	{
-      //		system = new EventHandlerJob<T_Job, T_Event>();
-      //		_systems.Add(system);
-      //		_jobSystemsCache[typeof(T_Job)] = system;
-      //	}
-
-      //	_cachedJobSystemType = jobType;
-      //	_cachedJobSystem = system;
-
-      //	return (EventHandlerJob<T_Job, T_Event>) system;
-      //}
-
+      /// <summary>
+      /// Get the job system for the event type.
+      /// </summary>
+      /// <typeparam name="T_Job"></typeparam>
+      /// <typeparam name="T_Event"></typeparam>
+      /// <returns></returns>
       private EventHandlerJob<T_Job, T_Event> GetJobSystem<T_Job, T_Event>()
     where T_Job : unmanaged, IJobForEvent<T_Event>
     where T_Event : unmanaged
@@ -266,7 +251,11 @@ namespace UnityEvents
          return (EventHandlerJob<T_Job, T_Event>)system;
       }
 
-
+      /// <summary>
+      /// Get the job systems for the event type.
+      /// </summary>
+      /// <typeparam name="T_Event"></typeparam>
+      /// <returns></returns>
       private List<IEventSystem> GetJobSystemsForEvent<T_Event>() where T_Event : unmanaged
       {
          Type evType = typeof(T_Event);
