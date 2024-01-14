@@ -7,11 +7,16 @@ namespace UnityEvents
 {
    public class EventManager : MonoBehaviour
    {
-      private static UnityEventSystem[] _systems = new UnityEventSystem[3] {
-            new UnityEventSystem(),
-            new UnityEventSystem(),
-            new UnityEventSystem()
-        };
+      private static readonly UnityEventSystem[] _systems;
+
+      static EventManager()
+      {
+         _systems = new UnityEventSystem[3];
+         for (int i = 0; i < _systems.Length; i++)
+         {
+            _systems[i] = new UnityEventSystem();
+         }
+      }
 
       /// <summary>
       /// Subscribe a listener to an event in the specific update tick.
@@ -20,7 +25,6 @@ namespace UnityEvents
       /// <param name="target"></param>
       /// <param name="eventCallback"></param>
       /// <param name="tick"></param>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void Subscribe<T_Event>(EventTarget target, Action<T_Event> eventCallback, EventUpdateTick tick)
           where T_Event : unmanaged
       {
@@ -36,12 +40,7 @@ namespace UnityEvents
       /// <param name="job"></param>
       /// <param name="onComplete"></param>
       /// <param name="tick"></param>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      public static void SubscribeWithJob<T_Job, T_Event>(
-          EventTarget target,
-          T_Job job,
-          Action<T_Job> onComplete,
-          EventUpdateTick tick)
+      public static void SubscribeWithJob<T_Job, T_Event>(EventTarget target, T_Job job, Action<T_Job> onComplete, EventUpdateTick tick)
           where T_Job : unmanaged, IJobForEvent<T_Event>
           where T_Event : unmanaged
       {
@@ -55,9 +54,8 @@ namespace UnityEvents
       /// <param name="target"></param>
       /// <param name="eventCallback"></param>
       /// <param name="tick"></param>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void Unsubscribe<T_Event>(EventTarget target, Action<T_Event> eventCallback, EventUpdateTick tick)
-          where T_Event : unmanaged
+    where T_Event : unmanaged
       {
          _systems[(int)tick].Unsubscribe(target, eventCallback);
       }
@@ -70,9 +68,7 @@ namespace UnityEvents
       /// <param name="target"></param>
       /// <param name="onComplete"></param>
       /// <param name="tick"></param>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
-      public static void UnsubscribeWithJob<T_Job, T_Event>(EventTarget target, Action<T_Job> onComplete,
-          EventUpdateTick tick)
+      public static void UnsubscribeWithJob<T_Job, T_Event>(EventTarget target, Action<T_Job> onComplete, EventUpdateTick tick)
           where T_Job : unmanaged, IJobForEvent<T_Event>
           where T_Event : unmanaged
       {
@@ -86,7 +82,6 @@ namespace UnityEvents
       /// <param name="target"></param>
       /// <param name="ev"></param>
       /// <param name="tick"></param>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void SendEvent<T_Event>(EventTarget target, T_Event ev, EventUpdateTick tick)
           where T_Event : unmanaged
       {
@@ -96,7 +91,6 @@ namespace UnityEvents
       /// <summary>
       /// Flushes all currently queued events NOW
       /// </summary>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void FlushAll()
       {
          for (int i = 0; i < _systems.Length; i++)
@@ -108,7 +102,6 @@ namespace UnityEvents
       /// <summary>
       /// Reset all the event systems with all update types.
       /// </summary>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void ResetAll()
       {
          for (int i = 0; i < _systems.Length; i++)
@@ -120,7 +113,6 @@ namespace UnityEvents
       /// <summary>
       /// Debug function to verify there are no lingering listeners. Throws an exception if there's a listener.
       /// </summary>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void VerifyNoSubscribersAll()
       {
          for (int i = 0; i < _systems.Length; i++)
@@ -133,7 +125,6 @@ namespace UnityEvents
       /// Debug function to verify there are no lingering listeners. Logs each offending system instead of throwing an
       /// exception.
       /// </summary>
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public static void VerifyNoSubscribersAllLog()
       {
          for (int i = 0; i < _systems.Length; i++)

@@ -11,14 +11,11 @@ namespace UnityEvents
    /// </summary>
    public class UnityEventSystem : IDisposable
    {
-      private List<IEventSystem> _systems = new List<IEventSystem>();
+      private IEventSystem[] _systems = Array.Empty<IEventSystem>();
       private Dictionary<Type, IEventSystem> _systemsCache = new Dictionary<Type, IEventSystem>();
       private Dictionary<Type, IEventSystem> _jobSystemsCache = new Dictionary<Type, IEventSystem>();
+      private Dictionary<Type, List<IEventSystem>> _eventToJobSystems = new Dictionary<Type, List<IEventSystem>>();
 
-      private Dictionary<Type, List<IEventSystem>> _eventToJobSystems =
-         new Dictionary<Type, List<IEventSystem>>();
-
-      // Cache, hit the same event multiple for better results
       private Type _cachedSystemEventType;
       private IEventSystem _cacheSystem;
 
@@ -36,7 +33,7 @@ namespace UnityEvents
       /// <typeparam name="T_Event">The event</typeparam>
       public void Subscribe<T_Event>(EventTarget target, Action<T_Event> eventCallback) where T_Event : unmanaged
       {
-         EventHandlerStandard<T_Event> system = GetSystem<T_Event>();
+         var system = GetSystem<T_Event>();
          system.Subscribe(target, eventCallback);
       }
 
@@ -52,7 +49,7 @@ namespace UnityEvents
          where T_Job : unmanaged, IJobForEvent<T_Event>
          where T_Event : unmanaged
       {
-         EventHandlerJob<T_Job, T_Event> handler = GetJobSystem<T_Job, T_Event>();
+         var handler = GetJobSystem<T_Job, T_Event>();
          handler.Subscribe(target, job, onComplete);
       }
 
@@ -64,7 +61,7 @@ namespace UnityEvents
       /// <typeparam name="T_Event">The event</typeparam>
       public void Unsubscribe<T_Event>(EventTarget target, Action<T_Event> eventCallback) where T_Event : unmanaged
       {
-         EventHandlerStandard<T_Event> system = GetSystem<T_Event>();
+         var system = GetSystem<T_Event>();
          system.Unsubscribe(target, eventCallback);
       }
 
@@ -79,7 +76,7 @@ namespace UnityEvents
          where T_Job : unmanaged, IJobForEvent<T_Event>
          where T_Event : unmanaged
       {
-         EventHandlerJob<T_Job, T_Event> handler = GetJobSystem<T_Job, T_Event>();
+         var handler = GetJobSystem<T_Job, T_Event>();
          handler.Unsubscribe(target, onComplete);
       }
 
@@ -91,28 +88,22 @@ namespace UnityEvents
       /// <typeparam name="T_Event">The event type.</typeparam>
       public void QueueEvent<T_Event>(EventTarget target, T_Event ev) where T_Event : unmanaged
       {
-         EventHandlerStandard<T_Event> system = GetSystem<T_Event>();
+         var system = GetSystem<T_Event>();
          system.QueueEvent(target, ev);
 
-         List<IEventSystem> list = GetJobSystemsForEvent<T_Event>();
+         var list = GetJobSystemsForEvent<T_Event>();
 
-         int count = list.Count;
-
-         for (int i = 0; i < count; i++)
+         for (int i = 0; i < list.Count; i++)
          {
-            IJobEventSystem<T_Event> typedSystem = (IJobEventSystem<T_Event>)list[i];
-            typedSystem.QueueEvent(target, ev);
+            ((IJobEventSystem<T_Event>)list[i]).QueueEvent(target, ev);
          }
       }
-
       /// <summary>
       /// Process all queued events.
       /// </summary>
       public void ProcessEvents()
       {
-         int count = _systems.Count;
-
-         for (int i = 0; i < count; i++)
+         for (int i = 0; i < _systems.Length; i++)
          {
             _systems[i].ProcessEvents();
          }
@@ -123,9 +114,7 @@ namespace UnityEvents
       /// </summary>
       public void Reset()
       {
-         int count = _systems.Count;
-
-         for (int i = 0; i < count; i++)
+         for (int i = 0; i < _systems.Length; i++)
          {
             _systems[i].Reset();
          }
@@ -136,9 +125,7 @@ namespace UnityEvents
       /// </summary>
       public void VerifyNoSubscribers()
       {
-         int count = _systems.Count;
-
-         for (int i = 0; i < count; i++)
+         for (int i = 0; i < _systems.Length; i++)
          {
             _systems[i].VerifyNoSubscribers();
          }
@@ -149,9 +136,7 @@ namespace UnityEvents
       /// </summary>
       public void VerifyNoSubscribersLog()
       {
-         int count = _systems.Count;
-
-         for (int i = 0; i < count; i++)
+         for (int i = 0; i < _systems.Length; i++)
          {
             try
             {
@@ -170,9 +155,7 @@ namespace UnityEvents
       /// </summary>
       public void Dispose()
       {
-         int count = _systems.Count;
-
-         for (int i = 0; i < count; i++)
+         for (int i = 0; i < _systems.Length; i++)
          {
             if (_systems[i] is IDisposable disposable)
             {
@@ -188,19 +171,19 @@ namespace UnityEvents
       /// <returns></returns>
       private EventHandlerStandard<T_Event> GetSystem<T_Event>() where T_Event : unmanaged
       {
-         Type evType = typeof(T_Event);
+         var evType = typeof(T_Event);
 
          if (evType == _cachedSystemEventType)
          {
             return (EventHandlerStandard<T_Event>)_cacheSystem;
          }
 
-         IEventSystem system;
-
-         if (!_systemsCache.TryGetValue(evType, out system))
+         if (!_systemsCache.TryGetValue(evType, out var system))
          {
             system = new EventHandlerStandard<T_Event>();
-            _systems.Add(system);
+            var systemsList = new List<IEventSystem>(_systems);
+            systemsList.Add(system);
+            _systems = systemsList.ToArray();
             _systemsCache[evType] = system;
          }
 
@@ -217,26 +200,25 @@ namespace UnityEvents
       /// <typeparam name="T_Event"></typeparam>
       /// <returns></returns>
       private EventHandlerJob<T_Job, T_Event> GetJobSystem<T_Job, T_Event>()
-    where T_Job : unmanaged, IJobForEvent<T_Event>
-    where T_Event : unmanaged
+         where T_Job : unmanaged, IJobForEvent<T_Event>
+         where T_Event : unmanaged
       {
-         Type jobType = typeof(T_Job);
-         Type eventType = typeof(T_Event);
+         var jobType = typeof(T_Job);
+         var eventType = typeof(T_Event);
 
          if (jobType == _cachedJobSystemType)
          {
             return (EventHandlerJob<T_Job, T_Event>)_cachedJobSystem;
          }
 
-         IEventSystem system;
-
-         if (!_jobSystemsCache.TryGetValue(jobType, out system))
+         if (!_jobSystemsCache.TryGetValue(jobType, out var system))
          {
             system = new EventHandlerJob<T_Job, T_Event>();
-            _systems.Add(system);
+            var systemsList = new List<IEventSystem>(_systems);
+            systemsList.Add(system);
+            _systems = systemsList.ToArray();
             _jobSystemsCache[jobType] = system;
 
-            // Register this job system to the relevant event type.
             if (!_eventToJobSystems.TryGetValue(eventType, out var list))
             {
                list = new List<IEventSystem>();
@@ -258,16 +240,14 @@ namespace UnityEvents
       /// <returns></returns>
       private List<IEventSystem> GetJobSystemsForEvent<T_Event>() where T_Event : unmanaged
       {
-         Type evType = typeof(T_Event);
+         var evType = typeof(T_Event);
 
          if (evType == _cachedJobSystemsType)
          {
             return _cachedJobSystems;
          }
 
-         List<IEventSystem> list;
-
-         if (!_eventToJobSystems.TryGetValue(evType, out list))
+         if (!_eventToJobSystems.TryGetValue(evType, out var list))
          {
             list = new List<IEventSystem>();
             _eventToJobSystems[evType] = list;

@@ -1,27 +1,32 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 
 namespace UnityEvents.Internal
 {
+   /// <summary>
+   /// A struct that represents a queued event.
+   /// </summary>
+   /// <typeparam name="T_Event"></typeparam>
    public struct QueuedEvent<T_Event> where T_Event : struct
    {
-      public EventTarget target;
-      public T_Event ev;
+      public readonly T_Event ev; // Moved T_Event first due to potential size
+      public readonly EventTarget target;
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public QueuedEvent(EventTarget target, T_Event ev)
       {
-         this.target = target;
          this.ev = ev;
+         this.target = target;
       }
    }
 
+   /// <summary>
+   /// A struct that represents an event.
+   /// </summary>
+   /// <typeparam name="T_Event"></typeparam>
    public struct UnityEvent<T_Event> where T_Event : struct
    {
-      public readonly T_Event ev;
-      public readonly int subscriberIndex;
+      public readonly T_Event ev; // T_Event first due to potential size
+      public readonly int subscriberIndex; // Integer field follows
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public UnityEvent(T_Event ev, int subscriberIndex)
       {
          this.ev = ev;
@@ -29,28 +34,29 @@ namespace UnityEvents.Internal
       }
    }
 
+   /// <summary>
+   /// A struct that represents a callback and a target.
+   /// </summary>
+   /// <typeparam name="T_Event"></typeparam>
    public struct EntityCallbackId<T_Event> : IEquatable<EntityCallbackId<T_Event>>
        where T_Event : struct
    {
-      public EventTarget target;
-      public Action<T_Event> callback;
+      public readonly Action<T_Event> callback; // Moved Action<T_Event> first due to potential size
+      public readonly EventTarget target;
 
       private const int HASHCODE_MULTIPLIER = 397;
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public EntityCallbackId(EventTarget target, Action<T_Event> callback)
       {
-         this.target = target;
          this.callback = callback;
+         this.target = target;
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public bool Equals(EntityCallbackId<T_Event> other)
       {
          return target.Equals(other.target) && Equals(callback, other.callback);
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
       public override bool Equals(object obj)
       {
          return obj is EntityCallbackId<T_Event> other && Equals(other);
@@ -60,8 +66,9 @@ namespace UnityEvents.Internal
       {
          unchecked
          {
+            int targetHashCode = target.GetHashCode();
             int callbackHashCode = callback?.GetHashCode() ?? 0;
-            return (target.GetHashCode() * HASHCODE_MULTIPLIER) ^ callbackHashCode;
+            return (targetHashCode * HASHCODE_MULTIPLIER) ^ callbackHashCode;
          }
       }
    }

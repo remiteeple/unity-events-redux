@@ -14,7 +14,7 @@ namespace UnityEvents
 	/// </summary>
 	/// <typeparam name="T_Event">The event the system is responsible for.</typeparam>
 	public class EventHandlerStandard<T_Event> : IEventSystem, IDisposable where T_Event : unmanaged
-   {
+	{
 		private NativeList<QueuedEvent<T_Event>> _queuedEvents;
 		private NativeList<EventTarget> _subscribers;
 
@@ -22,7 +22,7 @@ namespace UnityEvents
 		private Dictionary<EntityCallbackId<T_Event>, int> _entityCallbackToIndex;
 
 		private bool _disposed;
-		
+
 		private readonly int _batchCount;
 
 		private const int DEFAULT_EVENTS_TO_PROCESS_CAPACITY = 10;
@@ -85,14 +85,16 @@ namespace UnityEvents
 		/// <param name="callback">The callback that is invoked when an event fires.</param>
 		public void Subscribe(EventTarget target, Action<T_Event> callback)
 		{
+			EntityCallbackId<T_Event> callbackId = new EntityCallbackId<T_Event>(target, callback);
+
 #if !DISABLE_EVENT_SAFETY_CHKS
-			if (_entityCallbackToIndex.ContainsKey(new EntityCallbackId<T_Event>(target, callback)))
+			if (_entityCallbackToIndex.ContainsKey(callbackId))
 			{
 				throw new MultipleSubscriptionsException<T_Event>(callback);
 			}
 #endif
 
-			_entityCallbackToIndex.Add(new EntityCallbackId<T_Event>(target, callback), _subscribers.Length);
+			_entityCallbackToIndex.Add(callbackId, _subscribers.Length);
 			_subscribers.Add(target);
 			_subscriberCallbacks.Add(callback);
 		}
@@ -109,11 +111,9 @@ namespace UnityEvents
 			if (_entityCallbackToIndex.TryGetValue(callbackId, out int index))
 			{
 				_entityCallbackToIndex.Remove(callbackId);
-				
-				_subscribers.RemoveAtSwapBack(index);
 
-				_subscriberCallbacks[index] = _subscriberCallbacks[_subscriberCallbacks.Count - 1];
-				_subscriberCallbacks.RemoveAt(_subscriberCallbacks.Count - 1);
+				_subscribers.RemoveAtSwapBack(index);
+				_subscriberCallbacks.RemoveAtSwapBack(index);
 
 				if (index != _subscribers.Length)
 				{
@@ -131,7 +131,7 @@ namespace UnityEvents
 		/// </summary>
 		/// <param name="target">The target the event is for.</param>
 		/// <param name="ev">The event to queue.</param>
-		public void QueueEvent(EventTarget target, T_Event ev)
+		public void QueueEvent(EventTarget target, in T_Event ev)
 		{
 			_queuedEvents.Add(new QueuedEvent<T_Event>(target, ev));
 		}
@@ -141,36 +141,64 @@ namespace UnityEvents
 		/// </summary>
 		public void ProcessEvents()
 		{
-			// Early bail to avoid setting up job stuff unnecessarily
 			if (_queuedEvents.Length == 0)
 			{
 				return;
 			}
 
-			NativeQueue<UnityEvent<T_Event>> eventsToProcessQueue =
-				new NativeQueue<UnityEvent<T_Event>>(Allocator.TempJob);
-
-			BuildEventQueueJob job = new BuildEventQueueJob();
-			job.queuedEvents = _queuedEvents;
-			job.subscribers = _subscribers;
-			job.eventsToProcess = eventsToProcessQueue.AsParallelWriter();
-
-			job.Schedule(_queuedEvents.Length, _batchCount).Complete();
-
-			while (eventsToProcessQueue.TryDequeue(out UnityEvent<T_Event> ev))
+			if (_queuedEvents.Length > _batchCount)
 			{
-				try
-				{
-					_subscriberCallbacks[ev.subscriberIndex](ev.ev);
-				}
-				catch (Exception e)
-				{
-					Debug.LogException(e);
-				}
-			}
+				NativeQueue<UnityEvent<T_Event>> eventsToProcessQueue =
+					new NativeQueue<UnityEvent<T_Event>>(Allocator.TempJob);
 
-			eventsToProcessQueue.Dispose();
-			_queuedEvents.Clear();
+                BuildEventQueueJob job = new BuildEventQueueJob
+                {
+                    queuedEvents = _queuedEvents,
+                    subscribers = _subscribers,
+                    eventsToProcess = eventsToProcessQueue.AsParallelWriter()
+                };
+
+                job.Schedule(_queuedEvents.Length, _batchCount).Complete();
+
+				while (eventsToProcessQueue.TryDequeue(out UnityEvent<T_Event> ev))
+				{
+					try
+					{
+						_subscriberCallbacks[ev.subscriberIndex](ev.ev);
+					}
+					catch (Exception e)
+					{
+						Debug.LogException(e);
+					}
+				}
+
+				eventsToProcessQueue.Dispose();
+				_queuedEvents.Clear();
+			}
+			else
+			{
+				for (int i = 0; i < _queuedEvents.Length; i++)
+				{
+					QueuedEvent<T_Event> ev = _queuedEvents[i];
+
+					for (int j = 0; j < _subscribers.Length; j++)
+					{
+						if (_subscribers[j].Equals(ev.target))
+						{
+							try
+							{
+								_subscriberCallbacks[j](ev.ev);
+							}
+							catch (Exception e)
+							{
+								Debug.LogException(e);
+							}
+						}
+					}
+				}
+
+				_queuedEvents.Clear();
+			}
 		}
 
 		/// <summary>

@@ -208,50 +208,60 @@ namespace UnityEvents
 
 			NativeQueue<UnityEventJob> eventsToProcessQueue = new NativeQueue<UnityEventJob>(Allocator.TempJob);
 
-			BuildEventQueueJob job = new BuildEventQueueJob();
-			job.queuedEvents = _queuedEvents;
-			job.subscribers = _subscribers;
-			job.eventsToProcess = eventsToProcessQueue.AsParallelWriter();
+            BuildEventQueueJob job = new BuildEventQueueJob
+            {
+                queuedEvents = _queuedEvents,
+                subscribers = _subscribers,
+                eventsToProcess = eventsToProcessQueue.AsParallelWriter()
+            };
 
-			job.Schedule(_queuedEvents.Length, 32).Complete();
+            job.Schedule(_queuedEvents.Length, 32).Complete();
 
 			int eventCount = eventsToProcessQueue.Count;
 
 			NativeArray<UnityEventJob> eventsToProcess = new NativeArray<UnityEventJob>(eventCount, Allocator.TempJob);
 
-			EventQueueToEventArrayJob setJob = new EventQueueToEventArrayJob();
-			setJob.eventsInQueue = eventsToProcessQueue;
-			setJob.events = eventsToProcess;
+            EventQueueToEventArrayJob setJob = new EventQueueToEventArrayJob
+            {
+                eventsInQueue = eventsToProcessQueue,
+                events = eventsToProcess
+            };
 
-			JobHandle setArrayHandle = setJob.Schedule();
+            JobHandle setArrayHandle = setJob.Schedule();
 
 			NativeArray<T_Job> jobsArray = new NativeArray<T_Job>(eventCount, Allocator.TempJob);
 
-			CreateJobsArrayJob createJobArrayJob = new CreateJobsArrayJob();
-			createJobArrayJob.events = eventsToProcess;
-			createJobArrayJob.subscribers = _subscribers;
-			createJobArrayJob.jobs = jobsArray;
+            CreateJobsArrayJob createJobArrayJob = new CreateJobsArrayJob
+            {
+                events = eventsToProcess,
+                subscribers = _subscribers,
+                jobs = jobsArray
+            };
 
-			JobHandle createJobArrayHandle = createJobArrayJob.Schedule(
+            JobHandle createJobArrayHandle = createJobArrayJob.Schedule(
 				eventCount,
 				_batchCount,
 				setArrayHandle);
 
-			ExecuteEventJobsJob executeJob = new ExecuteEventJobsJob();
-			executeJob.jobsResult = jobsArray;
-			executeJob.evs = eventsToProcess;
+            ExecuteEventJobsJob executeJob = new ExecuteEventJobsJob
+            {
+                jobsResult = jobsArray,
+                evs = eventsToProcess
+            };
 
-			JobHandle executeHandle = executeJob.Schedule(
+            JobHandle executeHandle = executeJob.Schedule(
 				eventCount,
 				_batchCount,
 				createJobArrayHandle);
 
-			WriteBackToSubscribersJob writeBackJob = new WriteBackToSubscribersJob();
-			writeBackJob.subscribers = _subscribers;
-			writeBackJob.evs = eventsToProcess;
-			writeBackJob.jobsResult = jobsArray;
+            WriteBackToSubscribersJob writeBackJob = new WriteBackToSubscribersJob
+            {
+                subscribers = _subscribers,
+                evs = eventsToProcess,
+                jobsResult = jobsArray
+            };
 
-			JobHandle writeBackHandle = writeBackJob.Schedule(
+            JobHandle writeBackHandle = writeBackJob.Schedule(
 				eventCount,
 				_batchCount,
 				executeHandle);
