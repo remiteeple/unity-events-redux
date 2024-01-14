@@ -8,7 +8,7 @@ namespace UnityEvents.Internal
       public EventTarget target;
       public T_Event ev;
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      
       public QueuedEvent(EventTarget target, T_Event ev)
       {
          this.target = target;
@@ -21,7 +21,7 @@ namespace UnityEvents.Internal
       public readonly T_Event ev;
       public readonly int subscriberIndex;
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      
       public UnityEvent(T_Event ev, int subscriberIndex)
       {
          this.ev = ev;
@@ -37,20 +37,20 @@ namespace UnityEvents.Internal
 
       private const int HASHCODE_MULTIPLIER = 397;
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      
       public EntityCallbackId(EventTarget target, Action<T_Event> callback)
       {
          this.target = target;
          this.callback = callback;
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      
       public bool Equals(EntityCallbackId<T_Event> other)
       {
          return target.Equals(other.target) && Equals(callback, other.callback);
       }
 
-      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      
       public override bool Equals(object obj)
       {
          return obj is EntityCallbackId<T_Event> other && Equals(other);
