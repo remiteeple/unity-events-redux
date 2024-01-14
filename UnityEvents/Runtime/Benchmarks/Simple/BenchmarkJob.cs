@@ -8,18 +8,20 @@ namespace UnityEvents.Benchmark
    /// </summary>
    public class BenchmarkJob : MonoBehaviour
    {
+      [SerializeField] private int _eventCount = 100;
+      [SerializeField] private EventUpdateTick _eventUpdateTick = EventUpdateTick.FixedUpdate;
+
+
       // I have to be an unmanaged type! Need references? Use an id and have a lookup database system.
       private struct EvBenchmarkEvent
       {
-         public int jobValue;
+         public short jobValue;
 
-         public EvBenchmarkEvent(int jobValue)
+         public EvBenchmarkEvent(short jobValue)
          {
             this.jobValue = jobValue;
          }
       }
-
-      private EvBenchmarkEvent _ev = new EvBenchmarkEvent(1);
 
       private struct BenchJob : IJobForEvent<EvBenchmarkEvent>
       {
@@ -43,27 +45,41 @@ namespace UnityEvents.Benchmark
          GlobalEventSystem.SubscribeWithJob<BenchJob, EvBenchmarkEvent>(new BenchJob(), OnJobFinished);
       }
 
-      private void OnDisable()
+      private void Update()
       {
-         GlobalEventSystem.UnsubscribeWithJob<BenchJob, EvBenchmarkEvent>(OnJobFinished);
+         if (_eventUpdateTick == EventUpdateTick.Update)
+         {
+            SendEvents();
+         }
       }
 
       private void FixedUpdate()
       {
-         SendEvents();
+         if (_eventUpdateTick == EventUpdateTick.FixedUpdate)
+         {
+            SendEvents();
+         }
+      }
+
+      private void LateUpdate()
+      {
+         if (_eventUpdateTick == EventUpdateTick.LateUpdate)
+         {
+            SendEvents();
+         }
       }
 
       public void SendEvents()
       {
          // Job listeners trigger on events like anything else. You can have job listeners and regular listeners to
          // a single event.
-         for (int i = 0; i < 100; i++)
-            GlobalEventSystem.SendEvent(_ev);
+         for (int i = 0; i < _eventCount; i++)
+            GlobalEventSystem.SendEvent(new EvBenchmarkEvent(1));
       }
 
       private void OnJobFinished(BenchJob ev)
       {
-         Debug.Log("Job finished! Value: " + ev.jobCount);
+         Debug.Log("Benchmark Job finished! Value: " + ev.jobCount);
       }
    }
 }
