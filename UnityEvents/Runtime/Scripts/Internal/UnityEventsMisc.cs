@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace UnityEvents.Internal
 {
@@ -6,7 +7,8 @@ namespace UnityEvents.Internal
    /// A struct that represents a queued event.
    /// </summary>
    /// <typeparam name="T_Event"></typeparam>
-   public struct QueuedEvent<T_Event> where T_Event : struct
+   [StructLayout(LayoutKind.Sequential, Pack = 1)]
+   public struct QueuedEvent<T_Event> where T_Event : unmanaged
    {
       public readonly T_Event ev; // Moved T_Event first due to potential size
       public readonly EventTarget target;
@@ -22,7 +24,8 @@ namespace UnityEvents.Internal
    /// A struct that represents an event.
    /// </summary>
    /// <typeparam name="T_Event"></typeparam>
-   public struct UnityEvent<T_Event> where T_Event : struct
+   [StructLayout(LayoutKind.Sequential, Pack = 1)]
+   public struct UnityEvent<T_Event> where T_Event : unmanaged
    {
       public readonly T_Event ev; // T_Event first due to potential size
       public readonly int subscriberIndex; // Integer field follows
@@ -38,8 +41,9 @@ namespace UnityEvents.Internal
    /// A struct that represents a callback and a target.
    /// </summary>
    /// <typeparam name="T_Event"></typeparam>
+   [StructLayout(LayoutKind.Auto)]
    public struct EntityCallbackId<T_Event> : IEquatable<EntityCallbackId<T_Event>>
-       where T_Event : struct
+where T_Event : unmanaged
    {
       public readonly Action<T_Event> callback; // Moved Action<T_Event> first due to potential size
       public readonly EventTarget target;
